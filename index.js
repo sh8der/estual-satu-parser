@@ -1,11 +1,18 @@
+const fs = require("fs");
 const axios = require("axios");
-const cherio = require("cheerio");
-const productListPage = "https://estual.satu.kz/product_list";
+const cheerio = require("cheerio");
+const productListPageUrl = "https://estual.satu.kz/product_list";
 
-let getBrandFilterID = pageHtml => {
-	const $ = cherio.load(pageHtml);
-	IDList = [];
-	$(".cs-manufactures-list__item a").forEach(a =>
-		IDList.push(a.href.split("=")[1])
-	);
+let getBrandFilterID = html => {
+	const $ = cheerio.load(html);
+	let idList = [];
+	$(".cs-manufactures-list__item a").each((i, a) => {
+		idList.push($(a).attr('href').split("=")[1]);
+	})
+	return productListPageUrl + "/page_1?" + idList.map(e => "bss0=" + e).join("&");
 };
+
+(async()=>{
+	let productPage = await axios.get(productListPageUrl);
+	console.log( getBrandFilterID(productPage.data) );
+})();
