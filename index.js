@@ -1,4 +1,3 @@
-const fs = require('fs');
 const axios = require("axios");
 const cherio = require("cheerio");
 const productListPage = "https://estual.satu.kz/product_list";
