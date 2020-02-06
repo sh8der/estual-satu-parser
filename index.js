@@ -19,7 +19,7 @@ let q = queue(function(link, callback) {
 	axios.get(link).then(r => {
 		$ = cheerio.load(r.data);
 		let tempData = []
-		$('.cs-product-gallery__list .cs-product-gallery__item a.cs-product-gallery__image-link').each((i,e) => {
+		$('.cs-product-gallery__list .cs-product-gallery__item .cs-product-gallery__title a').each((i,e) => {
 			let t = $(e).attr('href');
 			console.log(t)
 			allProductLinks.push(t);
@@ -30,7 +30,6 @@ let q = queue(function(link, callback) {
 
 q.drain(function() {
 		console.log('all items have been processed');
-		console.log(allProductLinks);
 });
 
 // assign an error callback
