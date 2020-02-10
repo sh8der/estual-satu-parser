@@ -14,48 +14,90 @@ let links = [
 ];
 
 let data = [];
-let getImgList = ($, selector) => {
+let curProdId = '';
+let curentParentProdId = '';
+let isVariable = '';
+let mathTable = {
+	"Производитель": "manufacturer",
+	"Страна производитель": "countryManufacture",
+	"Вид парфюмерной продукции": "typePP",
+	"Тип аромата": 'flavorType',
+	"Начальная нота": "topNote",
+	"Нота сердца": "heartNote",
+	"Конечная нота": "finalNote",
+	"Классификация": "classification",
+	"Год выпуска": "year",
+	"Объем": "bulk"
+}
+let prodAttr = {}
+
+let getImgList = ($, selector, glueChar) => {
 	let links = [];
 	let id = '';
 	$(selector).each((i, e) => {
 		id = $(e).attr('data-subscribe').split('"')[1];
 		links.push(`https://images.kz.prom.st/${id}_w640_h640.jpg`);
 	})
-	return links.join('|');
+	return links.join(glueChar);
 }
-let q = queue(function (link, callback) {
-	axios.get(link).then(r => {
-		$ = cheerio.load(r.data);
 
-		temp = [];
-		temp.push($("h1.cs-title .cs-online-edit__link").attr("data-edit-id")); // id
-		temp.push($("h1.cs-title .cs-title__text").text()); // h1
-		temp.push($(".cs-product__container .cs-product__label").text()); // tag
-		temp.push($(".cs-product__container .b-product-cost__price").text().replace(/\D+/g, "")); // price
-		temp.push(getImgList($, '.cs-product__visual img')); // img lits links
-		temp.push($(".cs-tab-list .b-user-content").html()); // html description
+let q = queue(function (link, callback) {
+	axios.get(link, {timeout: 500}).then(r => {
+		let $ = cheerio.load(r.data);
+		curProdId = $("h1.cs-title .cs-online-edit__link").attr("data-edit-id");
+		let attrName = "";
+		let attrVal = "";
+		prodAttr = {
+			"manufacturer": "",
+			"countryManufacture": "",
+			"typePP": "",
+			'flavorType': "",
+			"topNote": "",
+			"heartNote": "",
+			"finalNote": "",
+			"classification": "",
+			"year": "",
+			"bulk": ""
+		}
+
+		temp = {
+			"id": curProdId,
+			"name": $("h1.cs-title .cs-title__text").text().replace(/\s\d+/gi, ''),
+			"tag": $(".cs-product__container .cs-product__label").text(),
+			"price": $(".cs-product__container .b-product-cost__price").text().replace(/\D+/g, ""),
+			"imgList": getImgList($, '.cs-product__visual img', ', '),
+			"desc": $(".cs-tab-list .b-user-content").html()
+		};
 
 		$('.b-product-info tbody tr').first().remove(); // remove tr with TH
 		$('.b-product-info tbody tr').each((i, e) => {
-			temp.push($(e).find('td').first().text().trim()); // add current product attr name
-			temp.push($(e).find('td').last().text().trim()); // add current product attr value
+			attrName = $(e).find('td').first().text().trim(); // add current product attr name
+			attrVal = $(e).find('td').last().text().trim(); // add current product attr value
+			if (attrName == "Объем") {
+				attrVal = attrVal.replace(/\D+\d*/gi, '');
+			}
+			prodAttr[mathTable[attrName]] = attrVal;
+			temp = Object.assign(temp, prodAttr);
 		})
-
-		data.push({...temp}); // convert arr to obj and push to global data arr 
+		console.log('Обработан продукт:', temp.name);
+		data.push(temp);
 		callback();
 	});
 }, 10);
 
 q.drain(function () {
 	console.log("Все очереди отработаны");
-	// console.log(data);
-	fs.writeFileSync('data.json', JSON.stringify({...data}));
+	fs.writeFileSync('data.json', JSON.stringify(data));
 });
 
 q.error(function (err, task) {
 	console.error("task experienced an error");
 });
 
-links.forEach(e => {
-	q.push(e);
-});
+let startParsePages = links => {
+	links.forEach(e => {
+		q.push(e);
+	});
+}
+
+module.exports = startParsePages;

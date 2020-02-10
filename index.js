@@ -2,6 +2,7 @@ const fs = require("fs");
 const axios = require("axios");
 const cheerio = require("cheerio");
 const queue = require('async/queue');
+const parsePages = require('./page.js');
 
 const productListPageUrl = "https://estual.satu.kz/product_list";
 let allProductLinks = [];
@@ -16,7 +17,7 @@ let getBrandFilterID = html => {
 };
 
 let q = queue(function (link, callback) {
-	axios.get(link).then(r => {
+	axios.get(link, {timeout: 1000}).then(r => {
 		$ = cheerio.load(r.data);
 		$('.cs-product-gallery__list .cs-product-gallery__item .cs-product-gallery__title a').each((i, e) => {
 			let t = $(e).attr('href');
@@ -29,6 +30,8 @@ let q = queue(function (link, callback) {
 
 q.drain(function () {
 	console.log('all items have been processed');
+	// console.log(allProductLinks);
+	parsePages(allProductLinks);
 });
 
 // assign an error callback
