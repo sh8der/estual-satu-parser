@@ -42,7 +42,7 @@ let getImgList = ($, selector, glueChar) => {
 }
 
 let q = queue(function (link, callback) {
-	axios.get(link, {timeout: 500}).then(r => {
+	axios.get(link, {timeout: 3600}).then(r => {
 		let $ = cheerio.load(r.data);
 		curProdId = $("h1.cs-title .cs-online-edit__link").attr("data-edit-id");
 		let attrName = "";
@@ -81,9 +81,10 @@ let q = queue(function (link, callback) {
 		})
 		console.log('Обработан продукт:', temp.name);
 		data.push(temp);
+		// setTimeout(()=>callback(),2000);
 		callback();
 	});
-}, 10);
+}, 4);
 
 q.drain(function () {
 	console.log("Все очереди отработаны");
